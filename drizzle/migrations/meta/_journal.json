@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794134475367,
+      "tag": "0000_create_meanwhile_collaboration",
+      "breakpoints": true
+    }
+  ]
+}

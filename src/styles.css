@@ -1,0 +1,168 @@
+/*
+ * apricity Design System
+ * Warmth of the sun in winter.
+ * Crisp black typography in light mode for maximum readability.
+ * Cozy midnight amber in dark mode.
+ * Legible, comfortable scale (not zoomed out).
+ */
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-serif: "Cormorant Garamond", Garamond, Georgia, serif;
+  --font-sans:
+    "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+
+  --color-cream: #faf8f5;
+  --color-sage: #7d927b;
+  --color-forest: #334b37;
+  --color-blue: #728fa6;
+  --color-peach: #e0ab92;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 1rem;
+  /* Crisp black text in light mode for complete clarity */
+  --background: #f7f5ee;
+  --foreground: #000000; /* Pure crisp black */
+  --card: rgba(255, 255, 255, 0.96);
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #2e4532; /* Deep readable forest green */
+  --primary-foreground: #ffffff;
+  --secondary: #ebe5d8;
+  --secondary-foreground: #000000;
+  --muted: #efebe0;
+  --muted-foreground: #2b2b2b;
+  --accent: #d6e1ea;
+  --accent-foreground: #000000;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.16);
+  --input: rgba(0, 0, 0, 0.2);
+  --ring: rgba(46, 69, 50, 0.5);
+}
+
+.dark {
+  /* Cozy midnight dark mode */
+  --background: #151311;
+  --foreground: #f8f6f2;
+  --card: rgba(28, 25, 22, 0.96);
+  --card-foreground: #f8f6f2;
+  --popover: #211e1a;
+  --popover-foreground: #f8f6f2;
+  --primary: #8eb391;
+  --primary-foreground: #12110f;
+  --secondary: #2c2824;
+  --secondary-foreground: #f8f6f2;
+  --muted: #26221e;
+  --muted-foreground: #c4bfb5;
+  --accent: #273038;
+  --accent-foreground: #f8f6f2;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.16);
+  --input: rgba(255, 255, 255, 0.2);
+  --ring: rgba(142, 179, 145, 0.5);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    /* Scaled up from 16px to 18px so the app is comfortable and never feels zoomed out */
+    font-size: 18px;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    line-height: 1.65;
+    letter-spacing: -0.01em;
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-serif {
+    font-family: var(--font-serif);
+    color: var(--color-foreground);
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Ambient particle animations */
+@keyframes rain-fall {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.65;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(240px);
+    opacity: 0;
+  }
+}
+
+@keyframes gentle-star {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.animate-rain {
+  animation: rain-fall 1.8s linear infinite;
+}
+
+.animate-star {
+  animation: gentle-star 3s ease-in-out infinite;
+}
