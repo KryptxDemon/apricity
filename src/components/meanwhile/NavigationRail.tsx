@@ -199,12 +199,12 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
         </div>
       )}
 
-      {/* Desktop Sidebar Navigation Rail */}
+      {/* Desktop Sidebar Navigation Rail - Locked fixed to the viewport */}
       <aside
-        className={`hidden lg:flex flex-col justify-between w-64 xl:w-72 h-screen sticky top-0 p-6 shrink-0 z-30 select-none border-r backdrop-blur-md transition-colors ${
+        className={`hidden lg:flex flex-col justify-between fixed top-0 left-0 bottom-0 w-64 xl:w-72 h-screen p-6 shrink-0 z-30 select-none border-r backdrop-blur-xl transition-colors ${
           isDark
-            ? "bg-[#1E1B18]/90 border-stone-800 text-[#F5F3EF]"
-            : "bg-white/92 border-black/15 text-black"
+            ? "bg-[#1E1B18]/80 border-stone-800/80 text-[#F5F3EF]"
+            : "bg-white/75 border-black/10 text-black"
         }`}
       >
         <div className="flex flex-col gap-6">

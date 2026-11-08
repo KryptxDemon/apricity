@@ -58,7 +58,7 @@ function ApricityContent() {
   return (
     <SceneryBackground scenery={currentUser.scenery} theme={theme}>
       <div className="flex flex-col lg:flex-row min-h-screen">
-        {/* Navigation Rail / Sidebar */}
+        {/* Navigation Rail / Sidebar (Fixed on desktop) */}
         <NavigationRail
           activeTab={activeTab}
           onSelectTab={setActiveTab}
@@ -66,8 +66,8 @@ function ApricityContent() {
           onOpenCollaborateModal={() => setIsCollabModalOpen(true)}
         />
 
-        {/* Main Content Area */}
-        <main className="flex-1 w-full overflow-y-auto pb-16 lg:pb-8">
+        {/* Main Content Area (Offset by fixed sidebar on desktop) */}
+        <main className="flex-1 w-full min-h-screen lg:pl-64 xl:pl-72 pb-16 lg:pb-12">
           {activeTab === "home" && (
             <SharedHomeView
               onOpenCollaborateModal={() => setIsCollabModalOpen(true)}

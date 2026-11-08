@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Calendar, CheckCircle2, Clock, Sparkles } from "lucide-react";
+import { Users, Calendar, CheckCircle2, Clock } from "lucide-react";
 import type { CollaborationHistoryRecord } from "../../types/meanwhile";
 
 interface CollaborationHistoryViewProps {
@@ -14,28 +14,27 @@ export const CollaborationHistoryView: React.FC<CollaborationHistoryViewProps> =
   isDark,
 }) => {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col gap-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col gap-8 text-black dark:text-[#F8F6F2]">
       {/* Header */}
-      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-stone-500/25 pb-6">
+      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-black/15 dark:border-white/15 pb-6">
         <div>
-          <span className="text-xs uppercase tracking-widest text-[#657B68] font-medium font-sans">
+          <span className="text-xs uppercase tracking-widest text-[#2E4532] dark:text-[#8EB391] font-bold font-sans">
             Collaboration Archive
           </span>
-          <h1 className="font-serif text-3xl sm:text-4xl font-normal tracking-tight mt-1">
+          <h1 className="font-serif text-3xl sm:text-4xl font-normal tracking-tight mt-1 text-black dark:text-[#F8F6F2]">
             People we've learned alongside
           </h1>
-          <p className="text-xs sm:text-sm opacity-75 font-light mt-1">
-            A quiet archive of companions who shared your study rooms, chapters read, and hours
-            focused.
+          <p className="text-xs sm:text-sm text-black/75 dark:text-white/75 font-medium mt-1">
+            An archive of companions who shared your study rooms, chapters read, and hours focused.
           </p>
         </div>
 
         <button
           onClick={onOpenCollaborateModal}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#657B68] hover:bg-[#516354] text-white text-xs font-medium transition-all shadow-sm cursor-pointer shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#2E4532] dark:bg-[#8EB391] hover:opacity-90 text-white dark:text-black text-xs font-bold transition-all shadow-sm cursor-pointer shrink-0"
         >
-          <Users className="w-3.5 h-3.5" />
-          <span>Invite New Collaborators</span>
+          <Users className="w-4 h-4" />
+          <span>Invite Collaborators</span>
         </button>
       </section>
 

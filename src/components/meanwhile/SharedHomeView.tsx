@@ -11,8 +11,14 @@ import {
   Users,
   Sun,
   Quote,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useMeanwhile } from "../../context/MeanwhileContext";
+import { CuteTimer } from "./CuteTimer";
+import { FAMOUS_AUTHOR_QUOTES } from "../../lib/initial-data";
 import { toast } from "sonner";
 
 interface SharedHomeViewProps {
@@ -35,18 +41,21 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
     addTopic,
     deleteTopic,
     addNoteToTopic,
+    activity,
+    isHost,
+    setSpaceQuote,
     theme,
   } = useMeanwhile();
 
   const isDark = theme === "dark";
 
-  // Other collaborators (excluding current user)
+  // Collaborators excluding current user
   const otherCollaborators = useMemo(
     () => collaborators.filter((c) => c.id !== currentUser?.id),
     [collaborators, currentUser],
   );
 
-  // Active selected companion for the right column
+  // Active companion tab for the right desk column
   const [selectedCompanionId, setSelectedCompanionId] = useState<string>("");
 
   React.useEffect(() => {
@@ -82,7 +91,13 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
   // Room code copied feedback
   const [copiedCode, setCopiedCode] = useState(false);
 
-  // Stats calculation
+  // Optional bottom quote visibility
+  const [showBottomQuote, setShowBottomQuote] = useState(true);
+
+  // Journal filter state
+  const [journalFilter, setJournalFilter] = useState<"all" | "completed" | "notes">("all");
+
+  // Stats
   const myCompletedCount = myTopics.filter((t) => t.completed).length;
   const myTotalCount = myTopics.length;
   const myPercent = myTotalCount > 0 ? Math.round((myCompletedCount / myTotalCount) * 100) : 0;
@@ -140,94 +155,83 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
     setActiveNoteTopicId(null);
   };
 
+  // Filtered activity journal events
+  const filteredActivity = useMemo(() => {
+    return activity.filter((item) => {
+      if (journalFilter === "completed") return item.kind === "topic_completed";
+      if (journalFilter === "notes") return item.kind === "note_added";
+      return true;
+    });
+  }, [activity, journalFilter]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 flex flex-col gap-8">
-      {/* Top Header: Room Title, Author Quote & The Single Prominent + Button */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-black/15 dark:border-white/15 pb-6">
-        <div className="flex flex-col gap-1">
+      {/* Top Header: Room Title, Status & Prominent Collaboration Button */}
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-black/10 dark:border-white/10 pb-5">
+        <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2.5">
-            <span className="font-serif text-3xl sm:text-4xl font-normal text-black dark:text-[#F8F6F2] tracking-tight">
+            <h1 className="font-serif text-3xl sm:text-4xl font-normal text-black dark:text-[#F8F6F2] tracking-tight">
               {space.name}
-            </span>
+            </h1>
           </div>
-          <p className="text-sm font-semibold text-black/75 dark:text-white/75">
-            Welcome, <strong>{currentUser?.name}</strong> • Up to 10 study partners in this room
+          <p className="text-xs sm:text-sm font-medium text-black/70 dark:text-white/70">
+            Welcome, <strong>{currentUser?.name}</strong> • Up to 10 study companions in this space
           </p>
         </div>
 
-        {/* The single prominent "+" icon to collaborate */}
+        {/* The single prominent collaborate button */}
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenCollaborateModal}
-            className="group inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-[#2E4532] dark:bg-[#8EB391] hover:opacity-90 text-white dark:text-[#141311] font-bold text-sm shadow-sm transition-all cursor-pointer"
-            title="Add someone to collaborate (Up to 10)"
+            className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-[#2E4532] dark:bg-[#8EB391] hover:opacity-90 text-white dark:text-[#141311] font-bold text-sm shadow-sm transition-all cursor-pointer"
+            title="Collaborate with friends (Up to 10)"
           >
             <div className="w-5 h-5 rounded-lg bg-white/20 dark:bg-black/20 flex items-center justify-center">
               <Plus className="w-4 h-4 stroke-[3]" />
             </div>
             <span>
               {otherCollaborators.length > 0
-                ? `${collaborators.length}/10 In Space`
+                ? `${collaborators.length}/10 Studying`
                 : "Add someone"}
             </span>
           </button>
         </div>
       </header>
 
-      {/* Author Motivation Banner (Set by Space Leader) */}
-      {space.quote && (
-        <section
-          className={`p-5 sm:p-6 rounded-3xl border transition-all ${
-            isDark
-              ? "bg-[#1E1B18]/95 border-stone-800 text-[#F8F6F2]"
-              : "bg-white/95 border-black/15 text-black shadow-xs"
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            <Quote className="w-5 h-5 text-[#2E4532] dark:text-[#8EB391] shrink-0 mt-0.5 opacity-80" />
-            <div className="flex flex-col gap-1">
-              <p className="font-serif text-lg sm:text-xl font-normal italic leading-relaxed text-black dark:text-[#F8F6F2]">
-                "{space.quote.text}"
-              </p>
-              <p className="text-xs font-bold uppercase tracking-wider text-[#2E4532] dark:text-[#8EB391]">
-                — {space.quote.author}
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Cute Focus Clock */}
+      <CuteTimer isDark={isDark} />
 
       {/* Main Dual-Column Desk: My Tasks on the Left, Her/Their Tasks on the Right */}
-      <main className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
+      <main className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* ======================================================== */}
         {/* COLUMN 1: MY TASKS (Left Side)                           */}
         {/* ======================================================== */}
         <div
-          className={`p-6 sm:p-8 rounded-3xl border flex flex-col gap-6 transition-all ${
+          className={`p-6 sm:p-7 rounded-3xl border transition-all ${
             isDark
-              ? "bg-[#1C1916]/95 border-stone-800 text-[#F8F6F2]"
-              : "bg-white/95 border-black/15 text-black shadow-xs"
+              ? "bg-[#1C1916]/65 border-white/10 text-white shadow-xl backdrop-blur-xl"
+              : "bg-white/60 border-white/60 text-black shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl"
           }`}
         >
           {/* Header */}
-          <div className="flex flex-col gap-3 border-b border-black/10 dark:border-white/10 pb-4">
+          <div className="flex flex-col gap-2.5 border-b border-black/10 dark:border-white/10 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-serif text-2xl sm:text-3xl font-normal text-black dark:text-[#F8F6F2] tracking-tight">
+                <h2 className="font-serif text-2xl sm:text-3xl font-normal text-black dark:text-white tracking-tight">
                   My Tasks
                 </h2>
-                <p className="text-sm font-semibold text-black/75 dark:text-white/75 mt-0.5">
+                <p className="text-xs sm:text-sm font-medium text-black/70 dark:text-white/70 mt-0.5">
                   {myCompletedCount} of {myTotalCount} completed ({myPercent}%)
                 </p>
               </div>
 
-              <div className="w-10 h-10 rounded-2xl bg-[#2E4532]/10 dark:bg-[#8EB391]/15 text-[#2E4532] dark:text-[#8EB391] flex items-center justify-center font-serif text-lg font-bold">
+              <div className="w-9 h-9 rounded-2xl bg-[#2E4532]/10 dark:bg-[#8EB391]/15 text-[#2E4532] dark:text-[#8EB391] flex items-center justify-center font-serif text-base font-bold">
                 {currentUser?.name?.charAt(0) || "M"}
               </div>
             </div>
 
             {/* Progress line */}
-            <div className="w-full bg-black/10 dark:bg-white/10 h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-black/10 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
               <div
                 className="bg-[#2E4532] dark:bg-[#8EB391] h-full transition-all duration-300 rounded-full"
                 style={{ width: `${myPercent}%` }}
@@ -235,24 +239,24 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
             </div>
           </div>
 
-          {/* Inline Add Task Form for Myself */}
-          <form onSubmit={handleAddMyTask} className="flex flex-col gap-2.5">
+          {/* Translucent Add Task Form */}
+          <form onSubmit={handleAddMyTask} className="flex flex-col gap-2.5 mt-4">
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                placeholder="What would you like to achieve? (Press Enter)"
+                placeholder="What's on your mind to study today? (Press Enter)"
                 value={myTaskInput}
                 onChange={(e) => setMyTaskInput(e.target.value)}
-                className={`flex-1 px-4 py-3 rounded-2xl text-base border focus:outline-none focus:ring-2 focus:ring-[#2E4532] ${
+                className={`flex-1 px-4 py-3 rounded-2xl text-base border focus:outline-none transition-all ${
                   isDark
-                    ? "bg-stone-900 border-stone-700 text-white placeholder-stone-400"
-                    : "bg-stone-50 border-black/20 text-black font-semibold placeholder-stone-500"
+                    ? "bg-black/30 border-white/15 text-white placeholder-stone-400 focus:bg-black/50 focus:border-white/30"
+                    : "bg-white/50 border-black/15 text-black font-medium placeholder-stone-500 focus:bg-white/80 focus:border-[#2E4532]"
                 }`}
               />
               <button
                 type="submit"
                 disabled={!myTaskInput.trim()}
-                className="px-5 py-3 rounded-2xl bg-[#2E4532] dark:bg-[#8EB391] disabled:opacity-40 text-white dark:text-[#141311] text-sm font-bold shadow-xs hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+                className="px-4 sm:px-5 py-3 rounded-2xl bg-[#2E4532] dark:bg-[#8EB391] disabled:opacity-40 text-white dark:text-[#141311] text-xs sm:text-sm font-bold shadow-xs hover:opacity-90 transition-opacity cursor-pointer shrink-0"
               >
                 Add Task
               </button>
@@ -270,8 +274,8 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                   onClick={() => setMyTaskMinutes(myTaskMinutes === mins ? undefined : mins)}
                   className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
                     myTaskMinutes === mins
-                      ? "bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black border-transparent"
-                      : "bg-stone-500/10 border-stone-500/15 text-black dark:text-white hover:bg-stone-500/20"
+                      ? "bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black border-transparent shadow-2xs"
+                      : "bg-white/40 dark:bg-black/20 border-black/10 dark:border-white/10 text-black dark:text-white hover:bg-white/70"
                   }`}
                 >
                   {mins}m
@@ -281,9 +285,9 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
           </form>
 
           {/* Task Checklist */}
-          <div className="flex flex-col gap-3 min-h-[220px]">
+          <div className="flex flex-col gap-2.5 mt-2 min-h-[200px]">
             {myTopics.length === 0 ? (
-              <div className="py-12 px-4 rounded-2xl border border-dashed border-black/15 dark:border-white/15 text-center flex flex-col items-center justify-center gap-2">
+              <div className="py-10 px-4 rounded-2xl border border-dashed border-black/15 dark:border-white/15 text-center flex flex-col items-center justify-center gap-2">
                 <BookOpen className="w-8 h-8 text-stone-400 stroke-[1.5]" />
                 <p className="font-serif text-lg font-medium text-black dark:text-white">
                   Your desk is clean.
@@ -296,30 +300,31 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
               myTopics.map((topic) => (
                 <div
                   key={topic.id}
-                  className={`p-4 rounded-2xl border transition-all ${
+                  className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
                     topic.completed
                       ? "opacity-55 line-through border-transparent bg-stone-500/5 text-black/60 dark:text-white/60"
                       : isDark
-                        ? "bg-stone-900/90 border-stone-800 hover:border-stone-700 text-white"
-                        : "bg-[#FDFBF7] border-black/15 hover:border-black/35 text-black shadow-2xs"
+                        ? "bg-stone-900/40 border-white/10 hover:border-white/25 text-white"
+                        : "bg-white/55 border-black/10 hover:border-black/25 text-black shadow-2xs"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3.5 flex-1">
+                      {/* Circular tactile checkbox */}
                       <button
                         onClick={() => toggleTopic(topic.id)}
-                        className={`mt-0.5 w-6 h-6 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                        className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                           topic.completed
-                            ? "bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black"
-                            : "border-2 border-black/40 dark:border-white/40 hover:border-[#2E4532]"
+                            ? "bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black border-transparent"
+                            : "border-2 border-stone-400 dark:border-stone-500 hover:border-[#2E4532]"
                         }`}
                         title={topic.completed ? "Mark incomplete" : "Mark completed"}
                       >
-                        {topic.completed && <Check className="w-4 h-4 stroke-[3]" />}
+                        {topic.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                       </button>
 
                       <div className="flex flex-col flex-1">
-                        <span className="text-base sm:text-lg font-semibold leading-snug text-black dark:text-[#F8F6F2]">
+                        <span className="text-base sm:text-lg font-medium leading-snug text-black dark:text-white">
                           {topic.name}
                         </span>
 
@@ -338,7 +343,7 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                           </div>
                         )}
 
-                        {/* Note Form */}
+                        {/* Add note input */}
                         {activeNoteTopicId === topic.id && (
                           <div className="mt-2.5 flex items-center gap-2">
                             <input
@@ -348,8 +353,8 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                               onChange={(e) => setNoteBody(e.target.value)}
                               className={`flex-1 px-3 py-1.5 rounded-xl text-xs border focus:outline-none focus:ring-1 focus:ring-[#2E4532] ${
                                 isDark
-                                  ? "bg-stone-900 border-stone-700 text-white"
-                                  : "bg-white border-black/20 text-black font-semibold"
+                                  ? "bg-black/40 border-white/20 text-white"
+                                  : "bg-white/80 border-black/20 text-black font-semibold"
                               }`}
                               autoFocus
                               onKeyDown={(e) => {
@@ -358,7 +363,7 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                             />
                             <button
                               onClick={() => handleSubmitNote(topic.id)}
-                              className="px-3 py-1.5 rounded-xl bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black text-xs font-bold"
+                              className="px-3 py-1.5 rounded-xl bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black text-xs font-bold cursor-pointer"
                             >
                               Save
                             </button>
@@ -367,7 +372,7 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                                 setActiveNoteTopicId(null);
                                 setNoteBody("");
                               }}
-                              className="px-2.5 py-1.5 text-xs text-black/60 dark:text-white/60"
+                              className="px-2.5 py-1.5 text-xs text-black/60 dark:text-white/60 cursor-pointer"
                             >
                               Cancel
                             </button>
@@ -378,8 +383,8 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
 
                     <div className="flex items-center gap-2 shrink-0">
                       {topic.estimatedMinutes && (
-                        <span className="flex items-center gap-1 text-xs font-bold text-black/80 dark:text-white/80 bg-stone-500/10 px-2.5 py-1 rounded-lg">
-                          <Clock className="w-3.5 h-3.5" />
+                        <span className="flex items-center gap-1 text-xs font-semibold text-black/80 dark:text-white/80 bg-stone-500/10 px-2 py-0.5 rounded-lg">
+                          <Clock className="w-3 h-3" />
                           {topic.estimatedMinutes}m
                         </span>
                       )}
@@ -415,15 +420,15 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
         {/* ======================================================== */}
         {activeCompanion ? (
           <div
-            className={`p-6 sm:p-8 rounded-3xl border flex flex-col gap-6 transition-all ${
+            className={`p-6 sm:p-7 rounded-3xl border transition-all ${
               isDark
-                ? "bg-[#1C1916]/95 border-stone-800 text-[#F8F6F2]"
-                : "bg-white/95 border-black/15 text-black shadow-xs"
+                ? "bg-[#1C1916]/65 border-white/10 text-white shadow-xl backdrop-blur-xl"
+                : "bg-white/60 border-white/60 text-black shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl"
             }`}
           >
-            {/* Header with companion selector if > 1 companion */}
-            <div className="flex flex-col gap-3 border-b border-black/10 dark:border-white/10 pb-4">
-              {/* Multi-companion tabs if more than 1 collaborator */}
+            {/* Header */}
+            <div className="flex flex-col gap-2.5 border-b border-black/10 dark:border-white/10 pb-4">
+              {/* Multi-companion tabs if > 1 companion */}
               {otherCollaborators.length > 1 && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                   {otherCollaborators.map((c) => {
@@ -434,13 +439,13 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                       <button
                         key={c.id}
                         onClick={() => setSelectedCompanionId(c.id)}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border flex items-center gap-2 shrink-0 ${
+                        className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer border flex items-center gap-1.5 shrink-0 ${
                           isSelected
                             ? "bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-[#141311] border-transparent shadow-2xs"
-                            : "bg-stone-500/10 border-stone-500/20 text-black dark:text-white hover:bg-stone-500/20"
+                            : "bg-white/40 dark:bg-black/20 border-black/10 dark:border-white/10 text-black dark:text-white hover:bg-white/70"
                         }`}
                       >
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         <span>{c.name}</span>
                         <span className="opacity-70 text-[10px]">
                           ({cDone}/{cTopics.length})
@@ -460,12 +465,12 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
 
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-serif text-2xl sm:text-3xl font-normal text-black dark:text-[#F8F6F2] tracking-tight">
+                  <h2 className="font-serif text-2xl sm:text-3xl font-normal text-black dark:text-white tracking-tight">
                     {activeCompanion.name}'s Tasks
                   </h2>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <p className="text-sm font-semibold text-black/75 dark:text-white/75">
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <p className="text-xs sm:text-sm font-medium text-black/70 dark:text-white/70">
                       Studying: <strong>{activeCompanion.currentSubject}</strong> •{" "}
                       {companionCompletedCount} of {companionTotalCount} completed (
                       {companionPercent}%)
@@ -476,17 +481,17 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={onOpenPokeModal}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 font-bold text-xs transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 font-bold text-xs transition-colors cursor-pointer"
                     title="Send a nudge"
                   >
-                    <Heart className="w-4 h-4 fill-rose-500/30" />
+                    <Heart className="w-3.5 h-3.5 fill-rose-500/30" />
                     <span>Nudge</span>
                   </button>
                 </div>
               </div>
 
               {/* Companion Progress line */}
-              <div className="w-full bg-black/10 dark:bg-white/10 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-black/10 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
                 <div
                   className="bg-[#2E4532] dark:bg-[#8EB391] h-full transition-all duration-300 rounded-full"
                   style={{ width: `${companionPercent}%` }}
@@ -494,24 +499,24 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
               </div>
             </div>
 
-            {/* Quick Inline Add Task for Companion */}
-            <form onSubmit={handleAddCompanionTask} className="flex flex-col gap-2.5">
+            {/* Translucent Add Task Form for Companion */}
+            <form onSubmit={handleAddCompanionTask} className="flex flex-col gap-2.5 mt-4">
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder={`Add a task for ${activeCompanion.name}...`}
+                  placeholder={`Add a study goal for ${activeCompanion.name}...`}
                   value={companionTaskInput}
                   onChange={(e) => setCompanionTaskInput(e.target.value)}
-                  className={`flex-1 px-4 py-3 rounded-2xl text-base border focus:outline-none focus:ring-2 focus:ring-[#2E4532] ${
+                  className={`flex-1 px-4 py-3 rounded-2xl text-base border focus:outline-none transition-all ${
                     isDark
-                      ? "bg-stone-900 border-stone-700 text-white placeholder-stone-400"
-                      : "bg-stone-50 border-black/20 text-black font-semibold placeholder-stone-500"
+                      ? "bg-black/30 border-white/15 text-white placeholder-stone-400 focus:bg-black/50 focus:border-white/30"
+                      : "bg-white/50 border-black/15 text-black font-medium placeholder-stone-500 focus:bg-white/80 focus:border-[#2E4532]"
                   }`}
                 />
                 <button
                   type="submit"
                   disabled={!companionTaskInput.trim()}
-                  className="px-5 py-3 rounded-2xl bg-[#2E4532] dark:bg-[#8EB391] disabled:opacity-40 text-white dark:text-[#141311] text-sm font-bold shadow-xs hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+                  className="px-4 sm:px-5 py-3 rounded-2xl bg-[#2E4532] dark:bg-[#8EB391] disabled:opacity-40 text-white dark:text-[#141311] text-xs sm:text-sm font-bold shadow-xs hover:opacity-90 transition-opacity cursor-pointer shrink-0"
                 >
                   Add Task
                 </button>
@@ -531,8 +536,8 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                     }
                     className={`px-2.5 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
                       companionTaskMinutes === mins
-                        ? "bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black border-transparent"
-                        : "bg-stone-500/10 border-stone-500/15 text-black dark:text-white hover:bg-stone-500/20"
+                        ? "bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black border-transparent shadow-2xs"
+                        : "bg-white/40 dark:bg-black/20 border-black/10 dark:border-white/10 text-black dark:text-white hover:bg-white/70"
                     }`}
                   >
                     {mins}m
@@ -542,9 +547,9 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
             </form>
 
             {/* Companion Task Checklist */}
-            <div className="flex flex-col gap-3 min-h-[220px]">
+            <div className="flex flex-col gap-2.5 mt-2 min-h-[200px]">
               {companionTopics.length === 0 ? (
-                <div className="py-12 px-4 rounded-2xl border border-dashed border-black/15 dark:border-white/15 text-center flex flex-col items-center justify-center gap-2">
+                <div className="py-10 px-4 rounded-2xl border border-dashed border-black/15 dark:border-white/15 text-center flex flex-col items-center justify-center gap-2">
                   <BookOpen className="w-8 h-8 text-stone-400 stroke-[1.5]" />
                   <p className="font-serif text-lg font-medium text-black dark:text-white">
                     {activeCompanion.name} has no tasks listed yet.
@@ -557,30 +562,31 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                 companionTopics.map((topic) => (
                   <div
                     key={topic.id}
-                    className={`p-4 rounded-2xl border transition-all ${
+                    className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
                       topic.completed
                         ? "opacity-55 line-through border-transparent bg-stone-500/5 text-black/60 dark:text-white/60"
                         : isDark
-                          ? "bg-stone-900/90 border-stone-800 hover:border-stone-700 text-white"
-                          : "bg-[#FDFBF7] border-black/15 hover:border-black/35 text-black shadow-2xs"
+                          ? "bg-stone-900/40 border-white/10 hover:border-white/25 text-white"
+                          : "bg-white/55 border-black/10 hover:border-black/25 text-black shadow-2xs"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3.5 flex-1">
+                        {/* Circular tactile checkbox */}
                         <button
                           onClick={() => toggleTopic(topic.id)}
-                          className={`mt-0.5 w-6 h-6 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                          className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                             topic.completed
-                              ? "bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black"
-                              : "border-2 border-black/40 dark:border-white/40 hover:border-[#2E4532]"
+                              ? "bg-[#2E4532] dark:bg-[#8EB391] text-white dark:text-black border-transparent"
+                              : "border-2 border-stone-400 dark:border-stone-500 hover:border-[#2E4532]"
                           }`}
                           title="Collaborative check"
                         >
-                          {topic.completed && <Check className="w-4 h-4 stroke-[3]" />}
+                          {topic.completed && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </button>
 
                         <div className="flex flex-col flex-1">
-                          <span className="text-base sm:text-lg font-semibold leading-snug text-black dark:text-[#F8F6F2]">
+                          <span className="text-base sm:text-lg font-medium leading-snug text-black dark:text-white">
                             {topic.name}
                           </span>
 
@@ -603,8 +609,8 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
 
                       <div className="flex items-center gap-2 shrink-0">
                         {topic.estimatedMinutes && (
-                          <span className="flex items-center gap-1 text-xs font-bold text-black/80 dark:text-white/80 bg-stone-500/10 px-2.5 py-1 rounded-lg">
-                            <Clock className="w-3.5 h-3.5" />
+                          <span className="flex items-center gap-1 text-xs font-semibold text-black/80 dark:text-white/80 bg-stone-500/10 px-2 py-0.5 rounded-lg">
+                            <Clock className="w-3 h-3" />
                             {topic.estimatedMinutes}m
                           </span>
                         )}
@@ -629,21 +635,21 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
           /* Serene, welcoming invitation notebook page              */
           /* ======================================================== */
           <div
-            className={`p-8 sm:p-10 rounded-3xl border border-dashed flex flex-col items-center justify-center text-center gap-6 transition-all min-h-[480px] ${
+            className={`p-8 sm:p-10 rounded-3xl border border-dashed flex flex-col items-center justify-center text-center gap-6 transition-all min-h-[440px] ${
               isDark
-                ? "bg-[#1C1916]/60 border-stone-800 text-[#F8F6F2]"
-                : "bg-white/80 border-black/20 text-black shadow-2xs"
+                ? "bg-[#1C1916]/50 border-white/10 text-white backdrop-blur-xl"
+                : "bg-white/50 border-black/15 text-black shadow-sm backdrop-blur-xl"
             }`}
           >
-            <div className="w-16 h-16 rounded-3xl bg-[#2E4532]/10 dark:bg-[#8EB391]/15 text-[#2E4532] dark:text-[#8EB391] flex items-center justify-center shadow-xs">
-              <Sun className="w-8 h-8 stroke-[2]" />
+            <div className="w-14 h-14 rounded-2xl bg-[#2E4532]/10 dark:bg-[#8EB391]/15 text-[#2E4532] dark:text-[#8EB391] flex items-center justify-center shadow-2xs">
+              <Sun className="w-7 h-7 stroke-[2]" />
             </div>
 
             <div className="flex flex-col gap-2 max-w-md">
               <h3 className="font-serif text-2xl sm:text-3xl font-normal text-black dark:text-white">
                 Her Desk / Companion's Tasks
               </h3>
-              <p className="text-sm font-medium text-black/75 dark:text-white/75 leading-relaxed">
+              <p className="text-xs sm:text-sm font-medium text-black/70 dark:text-white/70 leading-relaxed">
                 Study side by side with your companion. Once you add someone to your space, their
                 live tasks and progress will unfold right here beside yours.
               </p>
@@ -652,9 +658,9 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
             <div className="flex flex-col items-center gap-3">
               <button
                 onClick={onOpenCollaborateModal}
-                className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#2E4532] dark:bg-[#8EB391] hover:opacity-90 text-white dark:text-[#141311] font-bold text-sm shadow-md transition-all cursor-pointer"
+                className="inline-flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-[#2E4532] dark:bg-[#8EB391] hover:opacity-90 text-white dark:text-[#141311] font-bold text-sm shadow-sm transition-all cursor-pointer"
               >
-                <Plus className="w-5 h-5 stroke-[2.5]" />
+                <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Invite Study Companion</span>
               </button>
 
@@ -664,7 +670,7 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
                 </span>
                 <button
                   onClick={handleCopyRoomCode}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-stone-500/10 hover:bg-stone-500/20 text-black dark:text-white font-mono text-xs font-bold transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/50 dark:bg-black/20 hover:bg-white/80 text-black dark:text-white font-mono text-xs font-bold transition-colors cursor-pointer border border-black/10 dark:border-white/10"
                   title="Click to copy code"
                 >
                   <span>{space.code}</span>
@@ -679,6 +685,176 @@ export const SharedHomeView: React.FC<SharedHomeViewProps> = ({
           </div>
         )}
       </main>
+
+      {/* ======================================================== */}
+      {/* "MEANWHILE..." SHARED JOURNAL SHOWCASING LIVE UPDATES     */}
+      {/* ======================================================== */}
+      <section
+        className={`p-6 sm:p-7 rounded-3xl border transition-all ${
+          isDark
+            ? "bg-[#1C1916]/65 border-white/10 text-white shadow-xl backdrop-blur-xl"
+            : "bg-white/60 border-white/60 text-black shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl"
+        }`}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/10 dark:border-white/10 pb-4">
+          <div>
+            <h3 className="font-serif text-2xl font-normal text-black dark:text-white tracking-tight flex items-center gap-2">
+              <span>Meanwhile...</span>
+              <span className="text-xs font-sans font-semibold uppercase tracking-wider text-[#2E4532] dark:text-[#8EB391] bg-[#2E4532]/10 dark:bg-[#8EB391]/15 px-2.5 py-0.5 rounded-full">
+                Shared Updates
+              </span>
+            </h3>
+            <p className="text-xs text-black/65 dark:text-white/65 mt-0.5">
+              A live chronicle of goals crossed off and moments shared across your study spaces.
+            </p>
+          </div>
+
+          {/* Filter pills */}
+          <div className="flex items-center gap-1.5">
+            {(["all", "completed", "notes"] as const).map((filterKey) => (
+              <button
+                key={filterKey}
+                onClick={() => setJournalFilter(filterKey)}
+                className={`px-3 py-1 rounded-xl text-xs font-semibold capitalize transition-all cursor-pointer border ${
+                  journalFilter === filterKey
+                    ? "bg-[#2E4532] text-white border-transparent dark:bg-[#8EB391] dark:text-black shadow-2xs"
+                    : "bg-white/40 dark:bg-black/20 border-black/10 dark:border-white/10 text-black dark:text-white hover:bg-white/70"
+                }`}
+              >
+                {filterKey === "all" ? "All" : filterKey === "completed" ? "Completed" : "Notes"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Activity feed list */}
+        <div className="flex flex-col gap-2.5 mt-4 max-h-64 overflow-y-auto pr-1">
+          {filteredActivity.length === 0 ? (
+            <div className="py-8 text-center text-xs text-black/60 dark:text-white/60 flex flex-col items-center justify-center gap-1.5">
+              <BookOpen className="w-6 h-6 text-stone-400 stroke-[1.5]" />
+              <p className="font-serif text-base font-medium text-black dark:text-white">
+                No updates yet today.
+              </p>
+              <p className="text-xs">
+                Check off a task or write a note to add a moment to your shared journal.
+              </p>
+            </div>
+          ) : (
+            filteredActivity.map((event) => (
+              <div
+                key={event.id}
+                className={`p-3 sm:p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-sm transition-all ${
+                  isDark
+                    ? "bg-black/20 border-white/5 hover:border-white/15 text-white"
+                    : "bg-white/50 border-black/10 hover:border-black/20 text-black"
+                }`}
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                      event.kind === "topic_completed"
+                        ? "bg-[#2E4532]/15 text-[#2E4532] dark:text-[#8EB391]"
+                        : event.kind === "note_added"
+                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                          : event.kind === "collaborator_joined"
+                            ? "bg-[#2E4532]/15 text-[#2E4532] dark:text-[#8EB391]"
+                            : "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+                    }`}
+                  >
+                    {event.kind === "topic_completed" ? (
+                      <Check className="w-4 h-4 stroke-[2.5]" />
+                    ) : event.kind === "note_added" ? (
+                      <MessageSquare className="w-4 h-4" />
+                    ) : event.kind === "collaborator_joined" ? (
+                      <Users className="w-4 h-4" />
+                    ) : (
+                      <Clock className="w-4 h-4" />
+                    )}
+                  </div>
+
+                  <div className="overflow-hidden">
+                    <p className="font-serif text-sm sm:text-base font-normal leading-snug truncate text-black dark:text-white">
+                      {event.detail}
+                    </p>
+                  </div>
+                </div>
+
+                <span className="text-[11px] text-black/50 dark:text-white/50 whitespace-nowrap shrink-0">
+                  {new Date(event.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* ======================================================== */}
+      {/* OPTIONAL QUOTE AT THE BOTTOM                             */}
+      {/* ======================================================== */}
+      {space.quote && (
+        <section
+          className={`p-5 sm:p-6 rounded-3xl border transition-all ${
+            isDark
+              ? "bg-[#1C1916]/55 border-white/10 text-white backdrop-blur-xl"
+              : "bg-white/55 border-white/60 text-black shadow-xs backdrop-blur-xl"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#2E4532] dark:text-[#8EB391] flex items-center gap-1.5">
+              <Quote className="w-3.5 h-3.5 text-[#2E4532] dark:text-[#8EB391]" />
+              Study Motivation (Optional)
+            </span>
+
+            <div className="flex items-center gap-2">
+              {/* Leader can cycle quote */}
+              {isHost && (
+                <div className="flex items-center gap-1">
+                  {FAMOUS_AUTHOR_QUOTES.slice(0, 4).map((q) => (
+                    <button
+                      key={q.author}
+                      onClick={() => setSpaceQuote(q)}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all ${
+                        space.quote?.author === q.author
+                          ? "bg-[#2E4532] text-white dark:bg-[#8EB391] dark:text-black border-transparent"
+                          : "bg-white/40 dark:bg-black/20 border-black/10 dark:border-white/10 text-black dark:text-white hover:bg-white/70"
+                      }`}
+                    >
+                      {q.author.split(" ").pop()}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Toggle visibility */}
+              <button
+                onClick={() => setShowBottomQuote(!showBottomQuote)}
+                className="p-1 rounded-xl text-black/50 hover:text-black dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer"
+                title={showBottomQuote ? "Collapse quote" : "Expand quote"}
+              >
+                {showBottomQuote ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {showBottomQuote && (
+            <div className="mt-2.5 flex flex-col gap-1">
+              <p className="font-serif text-base sm:text-lg font-normal italic leading-relaxed text-black dark:text-[#F8F6F2]">
+                "{space.quote.text}"
+              </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-black/60 dark:text-white/60">
+                — {space.quote.author}
+              </p>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 };

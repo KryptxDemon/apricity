@@ -101,6 +101,31 @@ class AmbientSoundEngine {
     }
   }
 
+  public playChime() {
+    this.initContext();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      // Gentle 3-note harmonic chime (F5 -> A5 -> C6)
+      const freqs = [698.46, 880.0, 1046.5];
+      freqs.forEach((freq, idx) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.14);
+        gain.gain.setValueAtTime(0.001, now + idx * 0.14);
+        gain.gain.exponentialRampToValueAtTime(0.12, now + idx * 0.14 + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.14 + 1.2);
+        osc.connect(gain);
+        gain.connect(this.ctx!.destination);
+        osc.start(now + idx * 0.14);
+        osc.stop(now + idx * 0.14 + 1.25);
+      });
+    } catch {
+      // safe fallback
+    }
+  }
+
   public stop() {
     this.currentType = "none";
     if (this.noiseNode) {
